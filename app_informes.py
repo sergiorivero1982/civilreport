@@ -22,7 +22,7 @@ with tab_inspeccion:
     uploaded_file = st.file_uploader("Subir foto de la inspección", type=["png", "jpg", "jpeg"])
 
     if uploaded_file is not None:
-        # SOLUCIÓN CLAVE: Convertir la imagen a RGBA para garantizar compatibilidad con fotos de WhatsApp
+        # CONVERSIÓN RGBA: Vital para procesar imágenes de WhatsApp sin que la pantalla se ponga negra
         image = Image.open(uploaded_file).convert("RGBA")
         
         # Ajustamos el tamaño para la pantalla
@@ -30,7 +30,6 @@ with tab_inspeccion:
         ratio = canvas_width / image.width
         canvas_height = int(image.height * ratio)
 
-        # Redimensionar la imagen de fondo
         bg_image = image.resize((canvas_width, canvas_height))
 
         st.markdown("#### 🖍️ Herramientas de Marcaje")
@@ -44,9 +43,9 @@ with tab_inspeccion:
 
         st.caption("Dibuja directamente sobre la imagen:")
         
-        # El lienzo interactivo
+        # El lienzo interactivo final
         canvas_result = st_canvas(
-            fill_color="rgba(255, 165, 0, 0)", # Transparente para ver la foto de fondo
+            fill_color="rgba(255, 165, 0, 0)", 
             stroke_width=3,
             stroke_color=stroke_color,
             background_image=bg_image,

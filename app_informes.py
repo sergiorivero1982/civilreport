@@ -5,50 +5,105 @@ import io
 from docx import Document
 from docx.shared import Inches
 
-# Configuración estética de la página
+# 1. Configuración de la página
 st.set_page_config(page_title="CivilReport Pro", page_icon="🏗️", layout="centered")
-
-st.markdown("""
-    <style>
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
-    .stTabs [data-baseweb="tab"] { background-color: #f0f2f6; border-radius: 4px 4px 0px 0px; padding: 10px 20px; }
-    .stTabs [aria-selected="true"] { background-color: #0e1117; color: white; }
-    </style>
-    """, unsafe_allow_html=True)
 
 st.title("🏗️ CivilReport Pro: Control de Obra")
 st.info("Plataforma integral de inspección y reportes técnicos.")
 
-tab_inspeccion, tab_calculos, tab_logistica, tab_formalizacion = st.tabs([
-    "📸 Inspección y Marcaje", "📐 Calculadoras", "🚁 Control Drone", "✍️ Firma y Envío"
+# 2. Creación de las Pestañas
+tab_inspeccion, tab_calculos, tab_logistica, tab_firma = st.tabs([
+    "📸 Inspección", "📐 Calculadoras", "🚁 Vistas Aéreas", "✍️ Firma y Cierre"
 ])
 
-# --- PESTAÑA 1: INSPECCIÓN ---
+# ==========================================
+# PESTAÑA 1: INSPECCIÓN
+# ==========================================
 with tab_inspeccion:
-    st.subheader("Registro de Observaciones")
+    st.subheader("Registro Fotográfico y Marcaje")
     uploaded_file = st.file_uploader("Subir foto de la inspección", type=["png", "jpg", "jpeg"])
 
     if uploaded_file is not None:
+        # Abrimos la imagen con Pillow
         image = Image.open(uploaded_file)
         
-        # Ajuste de tamaño
-        canvas_width = 350 
+        # Ajustamos el tamaño para la pantalla
+        canvas_width = 350
         ratio = canvas_width / image.width
         canvas_height = int(image.height * ratio)
 
         st.markdown("#### 🖍️ Herramientas de Marcaje")
-        drawing_mode = st.radio("Herramienta:", ("Mano alzada", "Flecha / Línea", "Rectángulo", "Círculo"), horizontal=True)
-        stroke_color = st.color_picker("Color de marca:", "#FF0000")
-        mode_map = {"Mano alzada": "freedraw", "Flecha / Línea": "line", "Rectángulo": "rect", "Círculo": "circle"}
+        col1, col2 = st.columns(2)
+        with col1:
+            drawing_mode = st.radio("Herramienta:", ("Mano alzada", "Línea", "Rectángulo", "Círculo"))
+        with col2:
+            stroke_color = st.color_picker("Color de la marca:", "#FF0000")
+            
+        mode_map = {"Mano alzada": "freedraw", "Línea": "line", "Rectángulo": "rect", "Círculo": "circle"}
 
-        # EL LIENZO - Aquí se carga la imagen de fondo directamente
+        st.caption("Dibuja directamente sobre la imagen:")
+        
+        # El lienzo interactivo con la imagen de fondo
         canvas_result = st_canvas(
-            fill_color="rgba(255, 165, 0, 0)",
+            fill_color="rgba(255, 165, 0, 0)", # Transparente
             stroke_width=3,
             stroke_color=stroke_color,
             background_image=image.resize((canvas_width, canvas_height)),
+            update_streamlit=True,
             height=canvas_height,
             width=canvas_width,
             drawing_mode=mode_map[drawing_mode],
-            key="canvas_site",
+            key="canvas_inspeccion",
         )
+        
+        st.markdown("### 📋 Datos de la Observación")
+        ubicacion = st.text_input("Ubicación del elemento (Ej. Losa Nivel 2):")
+        nota_foto = st.text_area("Descripción técnica:")
+        estado_obs = st.selectbox("Estado:", ["🔴 Pendiente", "🟡 En proceso", "🟢 Corregida"])
+
+# ==========================================
+# PESTAÑA 2: CALCULADORAS
+# ==========================================
+with tab_calculos:
+    st.subheader("Cálculo Rápido de Hormigón")
+    col_l, col_a, col_h = st.columns(3)
+    largo = col_l.number_input("Largo (m)", value=0.0)
+    ancho = col_a.number_input("Ancho (m)", value=0.0)
+    alto = col_h.number_input("Espesor (m)", value=0.0)
+    
+    vol_neto = largo * ancho * alto
+    st.success(f"**Volumen Neto:** {vol_neto:.2f} m³")
+
+    st.markdown("---")
+    st.subheader("Estimador de Peso de Acero")
+    diametro = st.selectbox("Diámetro (mm)", [6, 8, 10, 12, 16, 20, 25])
+    longitud = st.number_input("Longitud total (m)", value=0.0)
+    pesos_acero = {6: 0.222, 8: 0.395, 10: 0.617, 12: 0.888, 16: 1.578, 20: 2.466, 25: 3.853}
+    st.info(f"**Peso estimado:** {(longitud * pesos_acero[diametro]):.2f} kg")
+
+# ==========================================
+# PESTAÑA 3: VISTAS AÉREAS
+# ==========================================
+with tab_logistica:
+    st.subheader("Control Logístico Aéreo")
+    vuelo_file = st.file_uploader("Subir ortomosaico o vista drone", type=["jpg", "jpeg"], key="drone")
+    if vuelo_file is not None:
+        st.image(Image.open(vuelo_file), caption="Vista del terreno", use_column_width=True)
+
+# ==========================================
+# PESTAÑA 4: FIRMA
+# ==========================================
+with tab_firma:
+    st.subheader("Firma del Responsable")
+    firma_result = st_canvas(
+        fill_color="rgba(255, 255, 255, 1)",
+        stroke_width=2,
+        stroke_color="#000000",
+        background_color="#FFFFFF",
+        height=150,
+        width=350,
+        drawing_mode="freedraw",
+        key="canvas_firma",
+    )
+    if st.button("Finalizar Reporte"):
+        st.success("¡Datos guardados en memoria correctamente!")

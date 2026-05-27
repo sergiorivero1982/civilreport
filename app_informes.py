@@ -2,8 +2,22 @@ import streamlit as st
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
 import io
-from docx import Document
-from docx.shared import Inches
+import base64
+
+# ====================================================================
+# 🔥 EL PARCHE DEFINITIVO (Bypass para el servidor de Streamlit Cloud)
+# ====================================================================
+import streamlit.elements.image as st_image
+if not hasattr(st_image, 'image_to_url'):
+    def parche_image_to_url(image, width, clamp, channels, format, image_id):
+        # Convertimos la imagen a un código de texto (Base64) para forzar su carga
+        buffered = io.BytesIO()
+        image.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+        return f"data:image/png;base64,{img_str}"
+    
+    st_image.image_to_url = parche_image_to_url
+# ====================================================================
 
 # 1. Configuración de la página
 st.set_page_config(page_title="CivilReport Pro", page_icon="🏗️", layout="centered")
@@ -24,7 +38,7 @@ with tab_inspeccion:
     uploaded_file = st.file_uploader("Subir foto de la inspección", type=["png", "jpg", "jpeg"])
 
     if uploaded_file is not None:
-        # Abrimos la imagen con Pillow
+        # Abrimos la imagen
         image = Image.open(uploaded_file)
         
         # Ajustamos el tamaño para la pantalla
@@ -43,9 +57,9 @@ with tab_inspeccion:
 
         st.caption("Dibuja directamente sobre la imagen:")
         
-        # El lienzo interactivo con la imagen de fondo
+        # El lienzo interactivo (ahora con el parche, la imagen cargará sí o sí)
         canvas_result = st_canvas(
-            fill_color="rgba(255, 165, 0, 0)", # Transparente
+            fill_color="rgba(255, 165, 0, 0)", # Fondo transparente para las formas
             stroke_width=3,
             stroke_color=stroke_color,
             background_image=image.resize((canvas_width, canvas_height)),

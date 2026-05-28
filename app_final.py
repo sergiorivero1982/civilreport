@@ -1,22 +1,7 @@
 import streamlit as st
-import io
-import base64
 from PIL import Image
-
-# --- PARCHE DE COMPATIBILIDAD Y TRANSPARENCIA ---
-import streamlit.elements.image as st_image
-if not hasattr(st_image, 'image_to_url'):
-    def parche_image_to_url(img, width, clamp, channels, format, image_id):
-        if isinstance(img, Image.Image):
-            buffered = io.BytesIO()
-            img_rgba = img.convert("RGBA")
-            img_rgba.save(buffered, format="PNG")
-            img_str = base64.b64encode(buffered.getvalue()).decode()
-            return f"data:image/png;base64,{img_str}"
-        return ""
-    st_image.image_to_url = parche_image_to_url
-
 from streamlit_drawable_canvas import st_canvas
+import io
 
 # --- CONFIGURACIÓN Y UI ---
 st.set_page_config(page_title="CivilReport Pro", page_icon="🏗️", layout="centered")
@@ -33,6 +18,7 @@ with tab_inspeccion:
     uploaded_file = st.file_uploader("Subir foto de la inspección", type=["png", "jpg", "jpeg"])
 
     if uploaded_file is not None:
+        # Abrimos la imagen con conversión estándar
         image = Image.open(uploaded_file).convert("RGBA")
         
         canvas_width = 350
@@ -50,6 +36,7 @@ with tab_inspeccion:
         mode_map = {"Mano alzada": "freedraw", "Línea": "line", "Rectángulo": "rect", "Círculo": "circle"}
         st.caption("Dibuja directamente sobre la imagen:")
         
+        # El lienzo interactivo, ahora de forma nativa y sin parches
         canvas_result = st_canvas(
             fill_color="rgba(255, 165, 0, 0)", 
             stroke_width=3,

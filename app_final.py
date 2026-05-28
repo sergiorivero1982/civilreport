@@ -18,7 +18,7 @@ with tab_inspeccion:
     uploaded_file = st.file_uploader("Subir foto de la inspección", type=["png", "jpg", "jpeg"])
 
     if uploaded_file is not None:
-        # Abrimos la imagen con conversión estándar
+        # Abrimos la imagen con conversión estándar para evitar fondos negros
         image = Image.open(uploaded_file).convert("RGBA")
         
         canvas_width = 350
@@ -36,7 +36,7 @@ with tab_inspeccion:
         mode_map = {"Mano alzada": "freedraw", "Línea": "line", "Rectángulo": "rect", "Círculo": "circle"}
         st.caption("Dibuja directamente sobre la imagen:")
         
-        # El lienzo interactivo, ahora de forma nativa y sin parches
+        # El lienzo interactivo
         canvas_result = st_canvas(
             fill_color="rgba(255, 165, 0, 0)", 
             stroke_width=3,

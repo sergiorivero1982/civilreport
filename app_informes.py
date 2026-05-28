@@ -4,21 +4,20 @@ import base64
 from PIL import Image
 
 # ====================================================================
-# 🔥 EL PARCHE DEFINITIVO + CONVERSIÓN RGBA
-# Engaña al servidor para evitar el error 'image_to_url' y procesa
-# la foto en formato de texto puro para que el fondo no salga negro.
+# 🔥 EL PARCHE ESTRUCTURAL (Bypass de image_to_url)
+# Intercepta el error de la nueva versión de Streamlit y convierte 
+# la foto a texto puro (RGBA) para evitar el fondo negro de WhatsApp.
 # ====================================================================
 import streamlit.elements.image as st_image
 if not hasattr(st_image, 'image_to_url'):
-    def parche_image_to_url(img, width, clamp, channels, format, image_id):
-        if isinstance(img, Image.Image):
-            buffered = io.BytesIO()
-            # Aseguramos la transparencia para evitar cuadros negros
-            img_rgba = img.convert("RGBA")
-            img_rgba.save(buffered, format="PNG")
-            img_str = base64.b64encode(buffered.getvalue()).decode()
-            return f"data:image/png;base64,{img_str}"
-        return ""
+    def parche_image_to_url(image, width, clamp, channels, format, image_id):
+        buffered = io.BytesIO()
+        # Forzar RGBA para garantizar transparencia
+        img_rgba = image.convert("RGBA")
+        img_rgba.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+        return f"data:image/png;base64,{img_str}"
+    
     st_image.image_to_url = parche_image_to_url
 
 from streamlit_drawable_canvas import st_canvas
@@ -41,13 +40,11 @@ with tab_inspeccion:
     uploaded_file = st.file_uploader("Subir foto de la inspección", type=["png", "jpg", "jpeg"])
 
     if uploaded_file is not None:
-        # Conversión directa desde la subida
         image = Image.open(uploaded_file).convert("RGBA")
         
         canvas_width = 350
         ratio = canvas_width / image.width
         canvas_height = int(image.height * ratio)
-
         bg_image = image.resize((canvas_width, canvas_height))
 
         st.markdown("#### 🖍️ Herramientas de Marcaje")
@@ -58,10 +55,9 @@ with tab_inspeccion:
             stroke_color = st.color_picker("Color de la marca:", "#FF0000")
             
         mode_map = {"Mano alzada": "freedraw", "Línea": "line", "Rectángulo": "rect", "Círculo": "circle"}
-
         st.caption("Dibuja directamente sobre la imagen:")
         
-        # El lienzo interactivo protegido por el parche
+        # El lienzo interactivo, ahora protegido por el parche
         canvas_result = st_canvas(
             fill_color="rgba(255, 165, 0, 0)", 
             stroke_width=3,
@@ -86,7 +82,6 @@ with tab_calculos:
     largo = col_l.number_input("Largo (m)", value=0.0)
     ancho = col_a.number_input("Ancho (m)", value=0.0)
     alto = col_h.number_input("Espesor (m)", value=0.0)
-    
     vol_neto = largo * ancho * alto
     st.success(f"**Volumen Neto:** {vol_neto:.2f} m³")
 

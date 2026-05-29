@@ -1,12 +1,36 @@
 import streamlit as st
-from PIL import Image
-from streamlit_drawable_canvas import st_canvas
 import io
+import base64
+from PIL import Image
 
-# --- CONFIGURACIÓN Y UI ---
+# ====================================================================
+# 🔥 INYECCIÓN ESTRUCTURAL DIRECTA (El Bypass Definitivo)
+# ====================================================================
+import streamlit.elements.image as st_image
+import streamlit_drawable_canvas
+
+def parche_image_to_url(image, width, clamp, channels, format, image_id):
+    buffered = io.BytesIO()
+    # Forzamos transparencia para que WhatsApp no genere fondos negros
+    image.convert("RGBA").save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    return f"data:image/png;base64,{img_str}"
+
+# Forzamos la inyección en todos los niveles posibles
+st_image.image_to_url = parche_image_to_url
+if hasattr(streamlit_drawable_canvas, 'st_image'):
+    streamlit_drawable_canvas.st_image.image_to_url = parche_image_to_url
+
+from streamlit_drawable_canvas import st_canvas
+
+# ====================================================================
+# CÓDIGO DE LA APLICACIÓN
+# ====================================================================
 st.set_page_config(page_title="CivilReport Pro", page_icon="🏗️", layout="centered")
-st.title("🏗️ CivilReport Pro: Control de Obra")
-st.info("Plataforma integral de inspección y reportes técnicos.")
+
+# TESTIGO DE ACTUALIZACIÓN: Si ves este título, el servidor ya leyó este código
+st.title("🏗️ CivilReport Pro v2.0")
+st.info("✅ SISTEMA ACTUALIZADO: Si estás leyendo esto, el servidor se sincronizó correctamente y el parche está activo.")
 
 tab_inspeccion, tab_calculos, tab_logistica, tab_firma = st.tabs([
     "📸 Inspección", "📐 Calculadoras", "🚁 Vistas Aéreas", "✍️ Firma y Cierre"
@@ -18,7 +42,6 @@ with tab_inspeccion:
     uploaded_file = st.file_uploader("Subir foto de la inspección", type=["png", "jpg", "jpeg"])
 
     if uploaded_file is not None:
-        # Abrimos la imagen con conversión estándar para evitar fondos negros
         image = Image.open(uploaded_file).convert("RGBA")
         
         canvas_width = 350
@@ -36,7 +59,7 @@ with tab_inspeccion:
         mode_map = {"Mano alzada": "freedraw", "Línea": "line", "Rectángulo": "rect", "Círculo": "circle"}
         st.caption("Dibuja directamente sobre la imagen:")
         
-        # El lienzo interactivo
+        # El lienzo interactivo blindado
         canvas_result = st_canvas(
             fill_color="rgba(255, 165, 0, 0)", 
             stroke_width=3,
